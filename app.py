@@ -1,18 +1,26 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask import Flask
+from flask import Flask, request
 
+from flask_sqlalchemy import SQLAlchemy
+
+from flask_marshmallow import Marshmallow
+from marshmallow import ValidationError
+
+from flask_restful import Api, Resource, reqparse, abort
+
+from flask_migrate import Migrate
 
 from config import Configuration
-
-from events.blueprint import events
 
 app = Flask(__name__)
 app.config.from_object(Configuration)
 db = SQLAlchemy(app)
+api = Api(app)
+ma = Marshmallow(app)
+migrate = Migrate(app, db)
 
-from events.models import Event
+from models.event import Event
+from resources.event import EventsListAPIView, EventDetailAPIView
 
-app.register_blueprint(events, url_prefix='/events')
-
-
+api.add_resource(EventsListAPIView, '/events')
+api.add_resource(EventDetailAPIView, '/events/<int:event_id>')
 

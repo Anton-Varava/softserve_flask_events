@@ -1,8 +1,5 @@
 from app import db
 
-# from sqlalchemy.dialects.postgresql import
-
-
 class Event(db.Model):
     __tablename__ = 'events'
 
@@ -14,6 +11,8 @@ class Event(db.Model):
 
     def __repr__(self):
         return f'<Event:{self.id}. {self.title} at {self.date}. Status - {self.status_code}'
+
+
 
 
 
