@@ -10,8 +10,7 @@ class EventSchema(ma.SQLAlchemySchema):
     title = ma.auto_field()
     date = ma.auto_field()
     description = ma.auto_field()
-    status_code = ma.auto_field()
 
 
 event_schema = EventSchema()
-event_list_schema = EventSchema(many=True, only=('id', 'title', 'date', 'status_code'))
+event_list_schema = EventSchema(many=True, only=('id', 'title', 'date'))
