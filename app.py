@@ -20,15 +20,19 @@ migrate = Migrate(app, db)
 from models.event import Event
 from models.user import User
 from models.event_status import EventStatus
+from models.event_participant import EventParticipant
 from resources.event import EventsListAPIView, EventDetailAPIView
 from resources.user import UserAPIView, UserDetailAPIView, LoginAPIView
 from resources.event_status import EventStatusAPIView
+from resources.event_participant import EventRegistration
 
-api.add_resource(EventsListAPIView, '/events')
-api.add_resource(EventDetailAPIView, '/events/<int:event_id>')
+api.add_resource(LoginAPIView, '/login')
 api.add_resource(UserAPIView, '/users')
 api.add_resource(UserDetailAPIView, '/users/<int:user_id>')
-api.add_resource(LoginAPIView, '/login')
+api.add_resource(EventsListAPIView, '/events')
+api.add_resource(EventDetailAPIView, '/events/<int:event_id>')
+api.add_resource(EventRegistration, '/events/<int:event_id>/participants')
 api.add_resource(EventStatusAPIView, '/statuses')
+
 
 

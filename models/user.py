@@ -14,6 +14,8 @@ class User(db.Model):
     is_staff = db.Column(db.Boolean, default=False)
     is_superuser = db.Column(db.Boolean, default=False)
     events = db.relationship('Event', backref=db.backref('organizer', lazy='joined'), lazy='dynamic')
+    participant_events = db.relationship('EventParticipant', backref=db.backref('participant_events',
+                                                                                lazy='joined'), lazy='dynamic')
 
     def __repr__(self):
         return f'<User {self.first_name}, {self.email}>'
