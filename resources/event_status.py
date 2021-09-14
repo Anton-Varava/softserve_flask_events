@@ -4,7 +4,7 @@ from marshmallow import ValidationError
 
 from app import db
 from models.event_status import EventStatus
-from .user import token_required
+from .authentocation import token_required
 from schemas.event_status import event_status_schema, event_list_status_schema
 
 

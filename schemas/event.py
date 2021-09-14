@@ -12,6 +12,7 @@ class EventSchema(ma.SQLAlchemySchema):
     description = ma.auto_field()
     status_code = ma.auto_field()
     organizer_id = ma.auto_field()
+    invited_guests = ma.auto_field()
 
 
 event_schema = EventSchema()

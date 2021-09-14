@@ -9,6 +9,7 @@ class EventParticipantSchema(ma.SQLAlchemySchema):
     id = ma.auto_field()
     event_id = ma.auto_field()
     user_id = ma.auto_field()
+    status = ma.auto_field()
 
 
 participant_schema = EventParticipantSchema()

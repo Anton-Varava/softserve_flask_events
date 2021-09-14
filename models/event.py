@@ -10,7 +10,7 @@ class Event(db.Model):
     description = db.Column(db.String(5000), nullable=True)
     organizer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     participants = db.relationship('EventParticipant', backref=db.backref('event_participants'), lazy='dynamic')
-
+    invited_guests = db.relationship('EventInvitedGuest', backref=db.backref('event_guests'), lazy='dynamic')
 
     def __repr__(self):
         return f'<Event:{self.id}. {self.title} at {self.date}. Status - {self.status_code}'
@@ -18,3 +18,16 @@ class Event(db.Model):
     @property
     def is_current(self):
         return self.status_code == 20
+
+
+class EventInvitedGuest(db.Model):
+    __tablename__ = 'events_invited_guests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
+    category = db.Column(db.String(100))
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
+
+    def __repr__(self):
+        return f'<Guest {self.first_name} {self.last_name} ({self.category})>'

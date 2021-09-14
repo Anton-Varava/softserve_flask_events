@@ -7,6 +7,7 @@ class EventParticipant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.Integer, db.ForeignKey('participant_statuses.code'), default=10, nullable=False)
 
     __table_args__ = (db.UniqueConstraint('event_id', 'user_id'),)
 
