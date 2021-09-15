@@ -6,7 +6,7 @@ from models.event_participant import EventParticipant
 from models.event import Event
 from models.participant_status import ParticipantStatus
 from schemas.event_participant import participant_schema, participant_list_schema
-from .authentocation import token_required
+from .authentication import token_required
 
 
 class EventRegistration(Resource):

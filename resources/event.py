@@ -7,7 +7,7 @@ from app import db
 from schemas.event import event_schema, event_list_schema
 from models.event import Event, EventInvitedGuest
 from models.api_source import APISource
-from .authentocation import token_required
+from .authentication import token_required
 
 events_post_args = reqparse.RequestParser()
 events_post_args.add_argument('title', type=str, help='Title of the event is required', required=True)

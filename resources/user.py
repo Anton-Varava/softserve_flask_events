@@ -7,7 +7,7 @@ from flask import request, jsonify, make_response
 from app import db
 from models.user import User
 from schemas.user import user_schema, user_list_schema
-from .authentocation import token_required
+from .authentication import token_required
 
 
 class LoginAPIView(Resource):
