@@ -71,7 +71,9 @@ class EventDetailAPIView(Resource):
                                                       last_name=guest_data.get('last_name'),
                                                       category=guest_data.get('category'),
                                                       event_id=event.id)
-                        db.session.add(new_guest)
+                        if not self.guest_is_already_added(new_guest):
+                            # Create new Guest if not exist
+                            db.session.add(new_guest)
             elif value:
                 setattr(event, key, value)
         try:
@@ -92,7 +94,7 @@ class EventDetailAPIView(Resource):
         return make_response(jsonify({'message': 'Event deleted successfully'}), 200)
 
     @staticmethod
-    def get_guests_data(guests_json_data):
+    def get_guests_data(guests_json_data) -> list:
         guests_data = []
         for guest in guests_json_data:
             source_category = guest.get('category')
@@ -110,12 +112,26 @@ class EventDetailAPIView(Resource):
                                         headers=headers,
                                         params={'first_name': guest_first_name,
                                                 'last_name': guest_last_name})
-                response_guest_data = response.json().get('authors')[0]
-                if response_guest_data:
-                    guests_data.append({'category': source_category,
-                                        'first_name': response_guest_data.get('first_name'),
-                                        'last_name': response_guest_data.get('last_name')})
+                try:
+                    response_guest_data = response.json().get('authors')[0]
+                    if response_guest_data:
+                        guests_data.append({'category': source_category,
+                                            'first_name': response_guest_data.get('first_name'),
+                                            'last_name': response_guest_data.get('last_name')})
 
-                    break
+                        break
+                except:
+                    continue
+        if not guests_data:
+            abort(404, message="Guests are not found")
         return guests_data
 
+    @staticmethod
+    def guest_is_already_added(guest) -> bool:
+        guest_checking = EventInvitedGuest.query.filter_by(category=guest.category,
+                                                           event_id=guest.event_id,
+                                                           first_name=guest.first_name,
+                                                           last_name=guest.last_name).first()
+        if guest_checking:
+            return True
+        return False

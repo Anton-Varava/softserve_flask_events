@@ -1,5 +1,8 @@
-from app import db
-# from models.event import Event
+import jwt
+
+from datetime import datetime, timedelta
+
+from app import app, db
 
 
 class User(db.Model):
@@ -19,4 +22,15 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.first_name}, {self.email}>'
+
+    @property
+    def token(self):
+        return self._get_token()
+
+    def _get_token(self):
+        token = jwt.encode({
+            'id': self.id,
+            'exp': datetime.now() + timedelta(days=1)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
+        return token
 
