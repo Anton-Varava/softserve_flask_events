@@ -1,14 +1,10 @@
-import jwt
-
-from datetime import datetime, timedelta
-
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask_restful import Resource, abort
 
 from flask import request, jsonify, make_response
 
-from app import app, db
+from app import db
 from models.user import User
 from schemas.user import user_schema, user_list_schema
 from .authentocation import token_required
@@ -96,8 +92,6 @@ class UserDetailAPIView(Resource):
 
         if current_user.id != user.id:
             abort(403, message='You can\'t to edit this user.')
-
-
 
         json_data = request.get_json()
         for key, value in json_data.items():
