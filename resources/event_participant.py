@@ -1,5 +1,5 @@
-from flask_restful import Resource
-from flask import request, abort, make_response, jsonify
+from flask_restful import Resource, abort
+from flask import request, make_response, jsonify
 
 from app import db
 from models.event_participant import EventParticipant
@@ -15,10 +15,8 @@ class EventRegistration(Resource):
         event_id = kwargs.get('event_id')
         current_user = kwargs.get('current_user')
 
-        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).first()
-
-        if not event_registration_instance:
-            abort(404, 'You are not registered for this event yet.')
+        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).\
+            first_or_404(description='You are not registered for this event yet.')
 
         return participant_schema.dump(event_registration_instance)
 
@@ -26,18 +24,21 @@ class EventRegistration(Resource):
     @token_required
     def post(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
-        event = Event.query.get(event_id)
-        if not event:
-            abort(404, 'Event does not exist or has been deleted.')
+        event = Event.query.get_or_404(event_id, description='Event does not exist or has been deleted.')
+
         if not event.is_current:
-            abort(403, 'Event has already passed or canceled.')
+            abort(409, message='You can not to register on the event. Maybe, event has already passed or canceled.')
 
         current_user = kwargs.get('current_user')
 
         if EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).first():
-            abort(409, 'You are already registered for this event')
+            abort(409, message='You are already registered for this event')
+            
+        try:
+            participant_status = ParticipantStatus.query.get(request.get_json().get('status'))
+        except:
+            participant_status = None
 
-        participant_status = ParticipantStatus.query.get(request.get_json().get('status'))
         if participant_status:
             new_participant = EventParticipant(event_id=event_id, user_id=current_user.id, status=participant_status)
         else:
@@ -45,27 +46,39 @@ class EventRegistration(Resource):
         db.session.add(new_participant)
         db.session.commit()
 
-        return make_response(jsonify({'message': 'You have successfully registered fot the event.'}))
+        return make_response(jsonify({'message': 'You have successfully registered for the event.'}))
 
 
     @token_required
     def patch(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
         current_user = kwargs.get('current_user')
+        try:
+            status_field = int(request.get_json().get('status'))
+        except:
+            abort(400, message='Status field is required. Should be a number.')
 
-        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id,
-                                                                       user_id=current_user.id).first()
+        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).\
+            first_or_404(description='You are not registered for this event yet.')
 
-        if not event_registration_instance:
-            abort(404, 'You are not registered for this event yet.')
-
-        new_status = ParticipantStatus.query.get(request.get_json().get('status'))
-        if not new_status:
-            abort(404, 'Invalid status code.')
+        new_status = ParticipantStatus.query.get_or_404(status_field, description='Invalid status code.')
         setattr(event_registration_instance, 'status', new_status.code)
         db.session.commit()
 
         return participant_schema.dump(event_registration_instance)
 
+
+    @token_required
+    def delete(self, *args, **kwargs):
+        event_id = kwargs.get('event_id')
+        current_user = kwargs.get('current_user')
+
+        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id). \
+            first_or_404(description='You are not registered for this event yet.')
+
+        db.session.delete(event_registration_instance)
+        db.session.commit()
+
+        return make_response(jsonify({'message': 'Registration on event deleted successfully.'}))
 
 
