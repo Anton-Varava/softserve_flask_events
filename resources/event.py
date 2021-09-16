@@ -112,7 +112,7 @@ class EventDetailAPIView(Resource):
             guest_first_name = guest.get('first_name')
             guest_last_name = guest.get('last_name')
             api_sources = APISource.query.filter_by(category=source_category).all()
-            
+
             for source in api_sources:
                 # looking for the first match. Break if guest is founded
                 url = source.source_url

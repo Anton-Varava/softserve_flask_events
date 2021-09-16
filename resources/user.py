@@ -25,10 +25,8 @@ class LoginAPIView(Resource):
         if not email_from_json or not password_from_json:
             abort(400, message='Email and password fields in required.')
 
-        user = User.query.filter_by(email=email_from_json).first()
         # raise 404 if user does not exist
-        if not user:
-            abort(404, message='User does not exist.')
+        user = User.query.filter_by(email=email_from_json).first_or_404(description='User does not exist.')
 
         # raise 401 if password is wrong
         if not check_password_hash(user.password, password_from_json):
@@ -76,9 +74,7 @@ class UserDetailAPIView(Resource):
     @token_required
     def get(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
-        user = User.query.get(user_id_requested)
-        if not user:
-            abort(404, message='User does not exist or has been deleted.')
+        user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
         return user_schema.dump(user), 200
 
     @token_required
@@ -86,9 +82,7 @@ class UserDetailAPIView(Resource):
         current_user = kwargs.get('current_user')
         user_id_requested = kwargs.get('user_id')
 
-        user = User.query.get(user_id_requested)
-        if not user:
-            abort(404, message='User does not exist or has been deleted.')
+        user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
 
         if current_user.id != user.id:
             abort(403, message='You can\'t to edit this user.')
@@ -106,9 +100,8 @@ class UserDetailAPIView(Resource):
         user_id_requested = kwargs.get('user_id')
         current_user = kwargs.get('current_user')
 
-        user = User.query.filter(id=user_id_requested).first()
-        if not user:
-            abort(404, message='User does not exist or has been deleted.')
+        user = User.query.filter(id=user_id_requested).\
+            first_or_404(description='User does not exist or has been deleted.')
 
         if user.id != current_user.id:
             abort(403, message='You don\'t have a permissions to delete this user.')
