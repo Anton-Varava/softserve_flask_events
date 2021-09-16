@@ -33,7 +33,6 @@ class EventRegistration(Resource):
 
         if EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).first():
             abort(409, message='You are already registered for this event')
-            
         try:
             participant_status = ParticipantStatus.query.get(request.get_json().get('status'))
         except:

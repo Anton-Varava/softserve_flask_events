@@ -1,5 +1,5 @@
-from flask import request
 from flask_restful import Resource, abort, reqparse
+
 from marshmallow import ValidationError
 
 from app import db
@@ -21,16 +21,15 @@ class EventStatusAPIView(Resource):
 
     @token_required
     def post(self, *args, **kwargs):
-        json_data = event_status_args.parse_args()
-        try:
-            data = event_status_schema.load(json_data)
-            print(data)
-        except ValidationError as err:
-            return err.messages, 422
-
         current_user = kwargs.get('current_user')
         if not current_user.is_superuser:
             abort(403, message='You don\'t have a permissions to do this.')
+
+        json_data = event_status_args.parse_args()
+        try:
+            data = event_status_schema.load(json_data)
+        except ValidationError as err:
+            return err.messages, 409
 
         new_status = EventStatus(code=data.get('code'), title=data.get('title'))
         db.session.add(new_status)

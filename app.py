@@ -36,7 +36,7 @@ api.add_resource(UserDetailAPIView, '/users/<int:user_id>')
 api.add_resource(EventsListAPIView, '/events')
 api.add_resource(EventDetailAPIView, '/events/<int:event_id>')
 api.add_resource(EventRegistration, '/events/<int:event_id>/participants')
-api.add_resource(EventStatusAPIView, '/statuses')
+api.add_resource(EventStatusAPIView, '/events/statuses')
 
 
 @app.route('/api', methods=['GET'])
