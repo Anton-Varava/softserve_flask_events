@@ -1,7 +1,10 @@
 import requests
-from flask import request, make_response, jsonify
+
 from marshmallow import ValidationError
+
 from flask_restful import Resource, abort, reqparse
+
+from flask import request, make_response, jsonify
 
 from app import db
 from schemas.event import event_schema, event_list_schema
@@ -20,6 +23,8 @@ class EventsListAPIView(Resource):
     @token_required
     def get(self, *args, **kwargs):
         query_params = request.args
+
+        # Events filtering
         if query_params:
             params = {}
             for attr, value in query_params.items():
@@ -28,6 +33,9 @@ class EventsListAPIView(Resource):
             events = Event.query.filter_by(**params).all()
         else:
             events = Event.query.all()
+
+        if not events:
+            abort(404, message='Required event not found.')
         return event_list_schema.dump(events)
 
     @token_required
@@ -36,32 +44,37 @@ class EventsListAPIView(Resource):
         try:
             data = event_schema.load(json_data)
         except ValidationError as err:
-            return err.messages, 422
+            return err.messages, 400
 
         current_user = kwargs.get('current_user')
         new_event = Event(title=data.get('title'), date=data.get('date'), description=data.get('description'),
                           organizer_id=current_user.id)
-        db.session.add(new_event)
-        db.session.commit()
+        try:
+            db.session.add(new_event)
+            db.session.commit()
+        except:
+            abort(500, message='Something went wrong. Failed to create an event.')
         return event_schema.dump(new_event), 201
 
 
 class EventDetailAPIView(Resource):
     @token_required
     def get(self, *args, **kwargs):
-        event = Event.query.get(kwargs.get('event_id'))
-        if not event:
-            abort(404, message='Event does not exist or has been deleted.')
+        event = Event.query.get_or_404(kwargs.get('event_id'), description='Event does not exist or has been deleted.')
         return event_schema.dump(event), 200
 
     @token_required
     def patch(self, *args, **kwargs):
-        event = Event.query.get(kwargs.get('event_id'))
-        if not event:
-            abort(404, message='Event does not exist or has been deleted.')
+        event = Event.query.get_or_404(kwargs.get('event_id'), description='Event does not exist or has been deleted.')
+
         if event.organizer_id != kwargs.get('current_user').id:
             abort(403, message='You don\'t have a permissions to do this.')
-        json_data = request.get_json()
+
+        try:
+            json_data = request.get_json()
+        except:
+            abort(400, message='There is no JSON data in the request')
+
         for key, value in json_data.items():
             if key == 'guests':
                 guests_data = self.get_guests_data(value)
@@ -79,19 +92,17 @@ class EventDetailAPIView(Resource):
         try:
             db.session.commit()
         except:
-            abort(422, message='Data is not valid!')
+            abort(409, message='Data is not valid.')
         return event_schema.dump(event), 200
 
     @token_required
     def delete(self, *args, **kwargs):
-        event = Event.query.get(kwargs.get('event_id'))
-        if not event:
-            abort(404, message='Event does not exist or has been deleted.')
+        event = Event.query.get_or_404(kwargs.get('event_id'), description='Event does not exist or has been deleted.')
         if event.organizer_id != kwargs.get('current_user').id:
             abort(403, message='You don\'t have a permissions to do this.')
         db.session.delete(event)
         db.session.commit()
-        return make_response(jsonify({'message': 'Event deleted successfully'}), 200)
+        return make_response(jsonify({'message': 'Event deleted successfully.'}), 200)
 
     @staticmethod
     def get_guests_data(guests_json_data) -> list:
@@ -101,6 +112,7 @@ class EventDetailAPIView(Resource):
             guest_first_name = guest.get('first_name')
             guest_last_name = guest.get('last_name')
             api_sources = APISource.query.filter_by(category=source_category).all()
+            
             for source in api_sources:
                 # looking for the first match. Break if guest is founded
                 url = source.source_url
@@ -123,7 +135,7 @@ class EventDetailAPIView(Resource):
                 except:
                     continue
         if not guests_data:
-            abort(404, message="Guests are not found")
+            abort(404, message="Guests are not found.")
         return guests_data
 
     @staticmethod

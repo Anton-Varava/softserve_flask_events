@@ -16,4 +16,4 @@ class EventSchema(ma.SQLAlchemySchema):
 
 
 event_schema = EventSchema()
-event_list_schema = EventSchema(many=True, only=('id', 'title', 'date'))
+event_list_schema = EventSchema(many=True, only=('id', 'title', 'date', 'status_code'))
