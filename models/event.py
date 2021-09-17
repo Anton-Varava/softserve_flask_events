@@ -19,6 +19,10 @@ class Event(db.Model):
     def is_current(self):
         return self.status_code == 20
 
+    @property
+    def is_draft(self):
+        return self.status_code == 10
+
 
 class EventInvitedGuest(db.Model):
     __tablename__ = 'events_invited_guests'

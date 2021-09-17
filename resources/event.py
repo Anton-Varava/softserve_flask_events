@@ -28,11 +28,13 @@ class EventsListAPIView(Resource):
         if query_params:
             params = {}
             for attr, value in query_params.items():
-                if any([attr == 'title', attr == 'date', attr == 'status_code', attr == 'organizer_id']):
+                if any([attr == 'title', attr == 'date', attr == 'organizer_id']):
                     params[attr] = value
+                elif attr == 'status_code' and value != 10:
+                    abort(400, message='Invalid status code.')
             events = Event.query.filter_by(**params).all()
         else:
-            events = Event.query.all()
+            events = Event.query.filter(Event.status_code != 10).all()
 
         if not events:
             abort(404, message='Required event not found.')
