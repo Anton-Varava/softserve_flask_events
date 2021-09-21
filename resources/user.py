@@ -2,9 +2,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask_restful import Resource, abort
 
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from flask import request, jsonify, make_response
 
-from app import db
+from app import db, jwt
 from models.user import User
 from schemas.user import user_schema, user_list_schema
 from .authentication import token_required
@@ -32,7 +34,7 @@ class LoginAPIView(Resource):
         if not check_password_hash(user.password, password_from_json):
             abort(401, message='Wrong password.')
 
-        return make_response(jsonify({'email': user.email, 'token': user.token}), 200)
+        return make_response(jsonify({'email': user.email, 'access_token': user.token}), 200)
 
 
 class UserAPIView(Resource):
@@ -64,27 +66,21 @@ class UserAPIView(Resource):
 
         return user_schema.dump(new_user), 201
 
-    @token_required
-    def get(self, **kwargs):
-        users = User.query.all()
-        return user_list_schema.dump(users), 200
-
 
 class UserDetailAPIView(Resource):
-    @token_required
+    @jwt_required()
     def get(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
         user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
         return user_schema.dump(user), 200
 
-    @token_required
+    @jwt_required()
     def patch(self, *args, **kwargs):
-        current_user = kwargs.get('current_user')
         user_id_requested = kwargs.get('user_id')
 
         user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
 
-        if current_user.id != user.id:
+        if get_jwt_identity() != user.id:
             abort(403, message='You can\'t to edit this user.')
 
         json_data = request.get_json()
@@ -95,15 +91,14 @@ class UserDetailAPIView(Resource):
         db.session.commit()
         return user_schema.dump(user), 200
 
-    @token_required
+    @jwt_required()
     def delete(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
-        current_user = kwargs.get('current_user')
 
         user = User.query.filter(id=user_id_requested).\
             first_or_404(description='User does not exist or has been deleted.')
 
-        if user.id != current_user.id:
+        if user.id != get_jwt_identity():
             abort(403, message='You don\'t have a permissions to delete this user.')
 
         db.session.delete(user)

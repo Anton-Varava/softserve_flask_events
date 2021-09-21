@@ -1,5 +1,7 @@
 import jwt
 
+from flask_jwt_extended import create_access_token
+
 from datetime import datetime, timedelta
 
 from app import app, db
@@ -32,5 +34,7 @@ class User(db.Model):
             'id': self.id,
             'exp': datetime.now() + timedelta(days=1)
         }, app.config['SECRET_KEY'], algorithm='HS256')
-        return token
+        access_token = create_access_token(identity=self.id)
+        # return token
+        return access_token
 
