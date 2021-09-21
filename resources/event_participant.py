@@ -1,27 +1,27 @@
 from flask_restful import Resource, abort
 from flask import request, make_response, jsonify
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app import db
 from models.event_participant import EventParticipant
 from models.event import Event
 from models.participant_status import ParticipantStatus
+from models.user import User
 from schemas.event_participant import participant_schema, participant_list_schema
 from .authentication import token_required
 
 
 class EventRegistration(Resource):
-    @token_required
+    @jwt_required()
     def get(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
-        current_user = kwargs.get('current_user')
 
-        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).\
+        event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=get_jwt_identity()).\
             first_or_404(description='You are not registered for this event yet.')
 
         return participant_schema.dump(event_registration_instance)
 
-
-    @token_required
+    @jwt_required()
     def post(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
         event = Event.query.get_or_404(event_id, description='Event does not exist or has been deleted.')
@@ -29,7 +29,7 @@ class EventRegistration(Resource):
         if not event.is_current:
             abort(409, message='You can not to register on the event. Maybe, event has already passed or canceled.')
 
-        current_user = kwargs.get('current_user')
+        current_user = User.query.get_or_404(get_jwt_identity())
 
         if EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id).first():
             abort(409, message='You are already registered for this event')
@@ -48,10 +48,10 @@ class EventRegistration(Resource):
         return make_response(jsonify({'message': 'You have successfully registered for the event.'}))
 
 
-    @token_required
+    @jwt_required()
     def patch(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
-        current_user = kwargs.get('current_user')
+        current_user = User.query.get_or_404(get_jwt_identity())
         try:
             status_field = int(request.get_json().get('status'))
         except:
@@ -67,10 +67,10 @@ class EventRegistration(Resource):
         return participant_schema.dump(event_registration_instance)
 
 
-    @token_required
+    @jwt_required()
     def delete(self, *args, **kwargs):
         event_id = kwargs.get('event_id')
-        current_user = kwargs.get('current_user')
+        current_user = User.query.get_or_404(get_jwt_identity())
 
         event_registration_instance = EventParticipant.query.filter_by(event_id=event_id, user_id=current_user.id). \
             first_or_404(description='You are not registered for this event yet.')
