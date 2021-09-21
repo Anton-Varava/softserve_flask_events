@@ -10,7 +10,7 @@ class Event(db.Model):
     description = db.Column(db.String(5000), nullable=True)
     organizer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     participants = db.relationship('EventParticipant', backref=db.backref('event_participants'), lazy='dynamic')
-    invited_guests = db.relationship('EventInvitedGuest', backref=db.backref('event_guests'), lazy='dynamic')
+    invited_guests = db.relationship('EventInvitedGuest', backref=db.backref('event_guests', lazy=True), lazy='subquery')
 
     def __repr__(self):
         return f'<Event:{self.id}. {self.title} at {self.date}. Status - {self.status_code}'

@@ -20,7 +20,7 @@ def token_required(func):
         except:
             return make_response(jsonify({'message': 'Token is invalid.'}), 401)
 
-        current_user = User.query.filter_by(id=token_data['id']).first()
+        current_user = User.query.filter_by(id=token_data['sub']).first()
         return func(current_user=current_user, *args, **kwargs)
 
     return decorated

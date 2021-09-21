@@ -1,19 +1,27 @@
 from app import ma
-from models.event import Event
+from models.event import Event, EventInvitedGuest
+
+from .event_status import event_status_schema
+from .user import user_schema
+
+
+class GuestSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = EventInvitedGuest
+        fields = ('first_name', 'last_name', 'category')
 
 
 class EventSchema(ma.SQLAlchemySchema):
     class Meta:
         model = Event
+        load_instance = True
+        include_fk = True
+        fields = ('id', 'title', 'date', 'description', 'status_code', 'organizer_id', 'invited_guests')
 
-    id = ma.auto_field()
-    title = ma.auto_field()
-    date = ma.auto_field()
-    description = ma.auto_field()
-    status_code = ma.auto_field()
-    organizer_id = ma.auto_field()
-    invited_guests = ma.auto_field()
+    status_code = ma.Nested(event_status_schema)
+    organizer_id = ma.Nested(user_schema, exclude=('email',))
+    invited_guests = ma.Nested(GuestSchema, many=True)
 
 
 event_schema = EventSchema()
-event_list_schema = EventSchema(many=True, only=('id', 'title', 'date', 'status_code'))
+event_list_schema = EventSchema(many=True)

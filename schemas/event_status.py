@@ -5,9 +5,9 @@ from models.event_status import EventStatus
 class EventStatusSchema(ma.SQLAlchemySchema):
     class Meta:
         model = EventStatus
-
-    code = ma.auto_field()
-    title = ma.auto_field()
+        load_instance = True
+        include_fk = True
+        fields = ('code', 'title')
 
 
 event_status_schema = EventStatusSchema()

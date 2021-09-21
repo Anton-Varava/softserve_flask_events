@@ -1,6 +1,6 @@
-import requests
+from datetime import timedelta
 
-from flask import Flask, request
+from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -12,26 +12,13 @@ from flask_migrate import Migrate
 
 from flask_jwt_extended import JWTManager
 
-from apispec import APISpec
-from apispec.ext.marshmallow import MarshmallowPlugin
-
-from flask_apispec.extension import FlaskApiSpec
-
 from config import Configuration
 
 app = Flask(__name__)
 app.config.from_object(Configuration)
-# app.config.update({
-#     'APISPEC_SPEC': APISpec(
-#         title='Events Flask',
-#         version='v1',
-#         plugins=[MarshmallowPlugin()],
-#         openapi_version='2.0.0'
-#     ),
-#     'APISPEC_SWAGGER_URL': '/swagger',
-#     'APISPEC_SWAGGER_UI_URL': '/swagger-ui/'
-# })
-# docs = FlaskApiSpec(app)
+app.config["JWT_SECRET_KEY"] = app.config['SECRET_KEY']
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=10)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=3)
 db = SQLAlchemy(app)
 api = Api(app)
 ma = Marshmallow(app)
@@ -45,13 +32,13 @@ from models.event_participant import EventParticipant
 from models.participant_status import ParticipantStatus
 from models.api_source import APISource
 from resources.event import EventsListAPIView, EventDetailAPIView
-from resources.user import UserAPIView, UserDetailAPIView, LoginAPIView
+from resources.user import UserAPIView, UserDetailAPIView, LoginAPIView, RefreshToken
 from resources.event_status import EventStatusAPIView
 from resources.event_participant import EventRegistration
 
-# docs.register(EventsListAPIView)
 
 api.add_resource(LoginAPIView, '/login')
+api.add_resource(RefreshToken, '/login/refresh')
 api.add_resource(UserAPIView, '/users')
 api.add_resource(UserDetailAPIView, '/users/<int:user_id>')
 api.add_resource(EventsListAPIView, '/events')

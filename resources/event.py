@@ -1,12 +1,10 @@
 import requests
 
-from sqlalchemy.orm import joinedload
-
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from marshmallow import ValidationError
 
-from flask_restful import Resource, abort, reqparse, marshal_with
+from flask_restful import Resource, abort, reqparse
 
 from flask_apispec.views import MethodResource
 
@@ -15,17 +13,15 @@ from flask import request, make_response, jsonify
 from app import db
 from schemas.event import event_schema, event_list_schema
 from models.event import Event, EventInvitedGuest
+from models.event_status import EventStatus
 from models.user import User
 from models.api_source import APISource
-from .authentication import token_required
 
 events_post_args = reqparse.RequestParser()
 events_post_args.add_argument('title', type=str, help='Title of the event is required', required=True)
 events_post_args.add_argument('date', type=str, help='Date of the event in format \'YEAR-MONTH-DAY HOURS:MINUTES\' '
                                                      'is required', required=True)
 events_post_args.add_argument('description', type=str, help='Description of the event')
-
-
 
 
 class EventsListAPIView(MethodResource, Resource):
@@ -47,6 +43,9 @@ class EventsListAPIView(MethodResource, Resource):
 
         if not events:
             abort(404, message='Required event not found.')
+        for event in events:
+            event.status_code = EventStatus.query.get_or_404(event.status_code)
+            event.organizer_id = User.query.get_or_404(event.organizer_id)
         return event_list_schema.dump(events)
 
     @jwt_required()
@@ -71,6 +70,8 @@ class EventDetailAPIView(Resource):
     @jwt_required()
     def get(self, *args, **kwargs):
         event = Event.query.get_or_404(kwargs.get('event_id'), description='Event does not exist or has been deleted.')
+        event.status_code = EventStatus.query.get_or_404(event.status_code)
+        event.organizer_id = User.query.get_or_404(event.organizer_id)
         if event.is_draft:
             abort(404, message='Event does not exist or has been deleted.')
         return event_schema.dump(event), 200
