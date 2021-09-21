@@ -1,10 +1,4 @@
-import jwt
-
-from flask_jwt_extended import create_access_token
-
-from datetime import datetime, timedelta
-
-from app import app, db
+from app import db
 
 
 class User(db.Model):
@@ -24,17 +18,3 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.first_name}, {self.email}>'
-
-    @property
-    def token(self):
-        return self._get_token()
-
-    def _get_token(self):
-        token = jwt.encode({
-            'id': self.id,
-            'exp': datetime.now() + timedelta(days=1)
-        }, app.config['SECRET_KEY'], algorithm='HS256')
-        access_token = create_access_token(identity=self.id)
-        # return token
-        return access_token
-

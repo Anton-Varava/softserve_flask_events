@@ -2,14 +2,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask_restful import Resource, abort
 
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_refresh_token, create_access_token
 
 from flask import request, jsonify, make_response
 
-from app import db, jwt
+from app import db
 from models.user import User
 from schemas.user import user_schema, user_list_schema
-from .authentication import token_required
 
 
 class LoginAPIView(Resource):
@@ -34,7 +33,16 @@ class LoginAPIView(Resource):
         if not check_password_hash(user.password, password_from_json):
             abort(401, message='Wrong password.')
 
-        return make_response(jsonify({'email': user.email, 'access_token': user.token}), 200)
+        return make_response(jsonify(email=user.email,
+                                     access_token=create_access_token(identity=user.id, fresh=True),
+                                     refresh_token=create_refresh_token(identity=user.id)), 200)
+
+
+class RefreshToken(Resource):
+    @jwt_required(refresh=True)
+    def post(self):
+        new_access_token = create_access_token(identity=get_jwt_identity(), fresh=False)
+        return make_response(jsonify(access_token=new_access_token), 200)
 
 
 class UserAPIView(Resource):
@@ -74,7 +82,7 @@ class UserDetailAPIView(Resource):
         user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
         return user_schema.dump(user), 200
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     def patch(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
 
@@ -91,7 +99,7 @@ class UserDetailAPIView(Resource):
         db.session.commit()
         return user_schema.dump(user), 200
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     def delete(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
 
