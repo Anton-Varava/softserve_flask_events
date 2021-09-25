@@ -1,19 +1,29 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from flask_apispec import marshal_with, use_kwargs, doc
+from flask_apispec.views import MethodResource
+
 from flask_restful import Resource, abort
 
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_refresh_token, create_access_token
 
-from flask import request, jsonify, make_response
+from flask import request
 
 from app import db
 from models.user import User
-from schemas.user import user_schema, user_list_schema
+from schemas.user import user_detail_schema, user_login_schema, user_create_schema, \
+    login_token_schema, refresh_login_schema, user_update_schema
+from schemas.subsidiary import MessageResponseSchema
 
 
-class LoginAPIView(Resource):
+@doc(tags=['Authentication'])
+class LoginAPIView(MethodResource, Resource):
+
     # Sign In User
-    def post(self):
+    @use_kwargs(user_login_schema)
+    @marshal_with(login_token_schema, 200)
+    @doc(description='Get authentication tokens. ')
+    def post(self, *args, **kwargs):
         try:
             json_data = request.get_json()
         except:
@@ -33,21 +43,28 @@ class LoginAPIView(Resource):
         if not check_password_hash(user.password, password_from_json):
             abort(401, message='Wrong password.')
 
-        return make_response(jsonify(email=user.email,
-                                     access_token=create_access_token(identity=user.id, fresh=True),
-                                     refresh_token=create_refresh_token(identity=user.id)), 200)
+        return {'access_token': create_access_token(identity=user.id, fresh=True),
+                'refresh_token': create_refresh_token(identity=user.id),
+                'email': user.email}, 200
 
 
-class RefreshToken(Resource):
+@doc(tags=['Authentication'])
+class RefreshToken(MethodResource, Resource):
     @jwt_required(refresh=True)
-    def post(self):
+    @marshal_with(refresh_login_schema, 200)
+    @doc(description='Refresh access token.')
+    def post(self, *args, **kwargs):
         new_access_token = create_access_token(identity=get_jwt_identity(), fresh=False)
-        return make_response(jsonify(access_token=new_access_token), 200)
+        return {'access_token': new_access_token}, 200
 
 
-class UserAPIView(Resource):
+@doc(tags=['User'])
+class UserAPIView(MethodResource, Resource):
     # Sign Up User
-    def post(self):
+    @use_kwargs(user_create_schema)
+    @marshal_with(user_detail_schema, 201)
+    @doc(description='Create a new user.')
+    def post(self, *args, **kwargs):
         try:
             json_data = request.get_json()
         except:
@@ -72,17 +89,26 @@ class UserAPIView(Resource):
         db.session.add(new_user)
         db.session.commit()
 
-        return user_schema.dump(new_user), 201
+        return new_user, 201
 
 
-class UserDetailAPIView(Resource):
+@doc(tags=['User'])
+class UserDetailAPIView(MethodResource, Resource):
     @jwt_required()
+    @marshal_with(user_detail_schema)
+    @doc(description='Get a user details. Available only if is_staff or owner.')
     def get(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
+        current_user = User.query.get_or_404(get_jwt_identity())
+        if user_id_requested != current_user.id and not current_user.is_staff:
+            return abort(403, message='You don\'t have a permissions to do this.')
         user = User.query.get_or_404(user_id_requested, description='User does not exist or has been deleted.')
-        return user_schema.dump(user), 200
+        return user, 200
 
     @jwt_required(fresh=True)
+    @use_kwargs(user_update_schema)
+    @marshal_with(user_detail_schema)
+    @doc(description='Update s user.')
     def patch(self, *args, **kwargs):
         user_id_requested = kwargs.get('user_id')
 
@@ -93,25 +119,26 @@ class UserDetailAPIView(Resource):
 
         json_data = request.get_json()
         for key, value in json_data.items():
+            if key == 'password':
+                value = generate_password_hash(value, method='sha256')
             if value:
                 setattr(user, key, value)
 
         db.session.commit()
-        return user_schema.dump(user), 200
+        return user, 200
 
     @jwt_required(fresh=True)
+    @marshal_with(MessageResponseSchema)
+    @doc(description='Delete a user.')
     def delete(self, *args, **kwargs):
-        user_id_requested = kwargs.get('user_id')
-
-        user = User.query.filter(id=user_id_requested).\
-            first_or_404(description='User does not exist or has been deleted.')
+        user = User.query.get_or_404(kwargs.get('user_id'), description='User does not exist or has been deleted.')
 
         if user.id != get_jwt_identity():
             abort(403, message='You don\'t have a permissions to delete this user.')
 
         db.session.delete(user)
         db.session.commit()
-        return make_response(jsonify({'message': 'User deleted successfully'}, 200))
+        return {'message': 'User deleted successfully'}, 200
 
 
 
