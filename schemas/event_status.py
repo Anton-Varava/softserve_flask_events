@@ -1,13 +1,15 @@
 from app import ma
 from models.event_status import EventStatus
+from marshmallow import fields
 
 
 class EventStatusSchema(ma.SQLAlchemySchema):
     class Meta:
         model = EventStatus
         load_instance = True
-        include_fk = True
-        fields = ('code', 'title')
+
+    code = fields.Int()
+    title = fields.Str()
 
 
 event_status_schema = EventStatusSchema()

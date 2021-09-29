@@ -71,4 +71,5 @@ docs.register(UserDetailAPIView)
 docs.register(RefreshToken)
 docs.register(EventDetailAPIView)
 docs.register(EventsListAPIView)
+docs.register(EventRegistration)
 

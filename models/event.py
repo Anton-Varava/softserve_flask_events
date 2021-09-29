@@ -7,6 +7,7 @@ class Event(db.Model):
     title = db.Column(db.String(500), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     status_code = db.Column(db.SmallInteger, db.ForeignKey('event_statuses.code'), nullable=True, default=10)
+    status = db.relationship('EventStatus', lazy=True)
     description = db.Column(db.String(5000), nullable=True)
     organizer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     participants = db.relationship('EventParticipant', backref=db.backref('event_participants'), lazy='dynamic')

@@ -2,6 +2,9 @@ from app import db
 
 
 class User(db.Model):
+    """
+        description: User description
+    """
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)

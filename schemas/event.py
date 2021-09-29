@@ -5,7 +5,7 @@ from models.event import Event, EventInvitedGuest
 from marshmallow import fields, validate, validates, ValidationError
 
 from .event_status import event_status_schema
-from .user import user_schema
+from .user import user_detail_schema
 
 
 class GuestSchema(ma.SQLAlchemySchema):
@@ -28,7 +28,7 @@ class EventSchema(ma.SQLAlchemySchema):
     description = fields.Str(validate=[validate.Length(max=5000)])
     status_code = fields.Int()
     status = ma.Nested(event_status_schema, dump_only=True)
-    organizer = ma.Nested(user_schema, exclude=('email',), dump_only=True)
+    organizer = ma.Nested(user_detail_schema, exclude=('email',), dump_only=True)
     invited_guests = ma.Nested(GuestSchema, many=True)
 
     @validates('date')
@@ -40,6 +40,6 @@ class EventSchema(ma.SQLAlchemySchema):
 event_create_schema = EventSchema(only=('title', 'description', 'date', 'status_code'))
 event_update_schema = EventSchema(only=('title', 'date', 'description', 'status_code', 'invited_guests'))
 event_detail_schema = EventSchema(exclude=('status_code',))
-event_list_schema = EventSchema(only=('title', 'date', 'status'), many=True)
+event_list_schema = EventSchema(only=('id', 'title', 'date', 'status'), many=True)
 
 

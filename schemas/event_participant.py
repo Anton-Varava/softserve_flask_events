@@ -1,16 +1,28 @@
+from marshmallow import fields
+
 from app import ma
 from models.event_participant import EventParticipant
+from models.participant_status import ParticipantStatus
+
+
+class ParticipantStatusSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = ParticipantStatus
+
+    code = fields.Int()
+    title = fields.Str()
 
 
 class EventParticipantSchema(ma.SQLAlchemySchema):
     class Meta:
         model = EventParticipant
 
-    id = ma.auto_field()
-    event_id = ma.auto_field()
-    user_id = ma.auto_field()
-    status = ma.auto_field()
+    id = fields.Int(dump_only=True)
+    event_id = fields.Int(dump_only=True)
+    user_id = fields.Int(dump_only=True)
+    status_code = fields.Int()
+    status = ma.Nested(ParticipantStatusSchema)
 
 
-participant_schema = EventParticipantSchema()
+participant_detail_schema = EventParticipantSchema(only=('event_id', 'status'))
 participant_list_schema = EventParticipantSchema(many=True)

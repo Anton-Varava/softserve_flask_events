@@ -122,7 +122,7 @@ class EventDetailAPIView(MethodResource, Resource):
 
     @jwt_required()
     @marshal_with(MessageResponseSchema, 200)
-    @doc(description='Delete an event   .')
+    @doc(description='Delete an event.')
     def delete(self, *args, **kwargs):
         event = Event.query.get_or_404(kwargs.get('event_id'), description='Event does not exist or has been deleted.')
         if event.organizer_id != get_jwt_identity():
